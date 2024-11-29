@@ -118,11 +118,36 @@ window.onload = () => {
 };
 
 // Optional Reset Button for manual cleanup
+// Optional Reset Button for manual cleanup
 resetButton.addEventListener("click", () => {
+    // Clear the Firebase database messages
     remove(messagesRef)
         .then(() => console.log("Database reset"))
         .catch(error => console.error("Error resetting database:", error));
 
-    pc.close();
-    initializeWebRTC();
+    // Close and cleanup the current RTCPeerConnection
+    if (pc) {
+        pc.close(); // Close the current connection
+    }
+
+    // Reinitialize WebRTC (create a new RTCPeerConnection and reset the video stream)
+    yourId = Math.floor(Math.random() * 1000000000); // Generate a new ID
+    initializeWebRTC(); // Initialize a new WebRTC connection
+
+    // Reset local and remote video elements (optional)
+    yourVideo.srcObject = null; // Clear your local video stream
+    friendsVideo.srcObject = null; // Clear the remote video stream
+
+    // Re-request the user's media devices (video and audio)
+    navigator.mediaDevices
+        .getUserMedia({ video: true, audio: true })
+        .then(stream => {
+            yourVideo.srcObject = stream;
+
+            // Add tracks in a consistent order
+            stream.getAudioTracks().forEach(track => pc.addTrack(track, stream));
+            stream.getVideoTracks().forEach(track => pc.addTrack(track, stream));
+        })
+        .catch(error => console.error("Error accessing media devices:", error));
 });
+
